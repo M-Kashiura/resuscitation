@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GWR (灰白質・白質比) 計算ツール</title>
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Using a nice font from Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+        /* Custom styles for better visual feedback */
+        .result-value {
+            transition: all 0.3s ease-in-out;
+        }
+        .result-value.updated {
+            transform: scale(1.05);
+        }
+        .input-section h3 {
+            font-weight: 600;
+            color: #111827; /* gray-900 */
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #d1d5db; /* gray-300 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-5xl bg-white rounded-xl shadow-2xl p-8">
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl font-bold text-gray-800">GWR (灰白質・白質比) 計算ツール</h1>
+            <p class="text-gray-500 mt-2">各スライスレベルのHU値を入力すると、GWRが自動で計算されます。</p>
+        </header>
+
+        <!-- Main container for inputs and results -->
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <!-- Left side: Input Form -->
+            <div class="space-y-6">
+                <h2 class="text-xl font-bold text-gray-700 border-b-2 border-blue-500 pb-2">HU値 (Hounsfield Unit) の入力</h2>
+                
+                <!-- Slice 1 -->
+                <div class="input-section space-y-4 rounded-lg bg-gray-50 p-4">
+                    <h3>1. 視床と内包後脚が見えるスライス</h3>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+                        <label class="font-medium text-gray-600 col-span-2">灰白質 (Gray Matter)</label>
+                        <input type="number" id="s1_gm_l" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="左 HU値">
+                        <input type="number" id="s1_gm_r" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="右 HU値">
+                        <label class="font-medium text-gray-600 col-span-2 mt-2">白質 (White Matter)</label>
+                        <input type="number" id="s1_wm_l" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="左 HU値">
+                        <input type="number" id="s1_wm_r" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="右 HU値">
+                    </div>
+                </div>
+
+                <!-- Slice 2 -->
+                <div class="input-section space-y-4 rounded-lg bg-gray-50 p-4">
+                    <h3>2. 側脳室が見えなくなった1スライス上</h3>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+                        <label class="font-medium text-gray-600 col-span-2">灰白質 (Gray Matter)</label>
+                        <input type="number" id="s2_gm_l" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="左 HU値">
+                        <input type="number" id="s2_gm_r" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="右 HU値">
+                        <label class="font-medium text-gray-600 col-span-2 mt-2">白質 (White Matter)</label>
+                        <input type="number" id="s2_wm_l" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="左 HU値">
+                        <input type="number" id="s2_wm_r" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="右 HU値">
+                    </div>
+                </div>
+
+                <!-- Slice 3 -->
+                <div class="input-section space-y-4 rounded-lg bg-gray-50 p-4">
+                    <h3>3. 上記(2)の1スライス上</h3>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+                        <label class="font-medium text-gray-600 col-span-2">灰白質 (Gray Matter)</label>
+                        <input type="number" id="s3_gm_l" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="左 HU値">
+                        <input type="number" id="s3_gm_r" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="右 HU値">
+                        <label class="font-medium text-gray-600 col-span-2 mt-2">白質 (White Matter)</label>
+                        <input type="number" id="s3_wm_l" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="左 HU値">
+                        <input type="number" id="s3_wm_r" oninput="calculateGWR()" class="w-full p-2 border rounded-md" placeholder="右 HU値">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right side: Results Preview -->
+            <div class="bg-blue-50 rounded-lg p-6 flex flex-col justify-center sticky top-8">
+                <h2 class="text-xl font-bold text-gray-700 border-b-2 border-blue-500 pb-2 mb-6">計算結果プレビュー</h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-md font-medium text-gray-600">平均 灰白質HU値</h3>
+                        <p id="result-gm-avg" class="text-2xl font-bold text-gray-800 result-value">-</p>
+                    </div>
+                    <div>
+                        <h3 class="text-md font-medium text-gray-600">平均 白質HU値</h3>
+                        <p id="result-wm-avg" class="text-2xl font-bold text-gray-800 result-value">-</p>
+                    </div>
+                    <div class="pt-4">
+                        <h3 class="text-lg font-semibold text-blue-800">GWR (灰白質/白質 比)</h3>
+                        <p id="result-gwr" class="text-4xl font-bold text-blue-800 result-value">-</p>
+                        <p id="error-gwr" class="text-sm text-red-600 h-4 mt-1"></p>
+                    </div>
+                    <div class="pt-2">
+                        <h3 class="text-md font-semibold text-gray-700">臨床的評価</h3>
+                        <p id="result-interpretation" class="text-lg font-bold">-</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Clinical Significance Section -->
+        <section class="mt-12 pt-8 border-t border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">GWRの臨床的意義について</h2>
+            <div class="max-w-3xl mx-auto text-gray-700 space-y-4 bg-gray-50 p-6 rounded-lg shadow">
+                <p>心停止後など、びまん性の脳障害が疑われる患者において、予後予測の指標として灰白質・白質の放射線濃度比（GWR）の定量化が試みられています。</p>
+                <ul class="list-disc list-inside space-y-2 pl-2">
+                    <li>ROSC（自己心拍再開）後、12～24時間以降に撮影された頭部単純CTで測定されます。</li>
+                    <li>一般的に、<strong>GWRが低いほど脳浮腫が進行</strong>しており、予後不良を示唆します。</li>
+                    <li>報告によれば、<strong>GWR &lt; 1.1～1.8</strong> の範囲で予後不良を予測する特異度は95～100%と非常に高いとされています。</li>
+                    <li>臨床現場では、<strong class="text-red-600">GWR &lt; 1.1</strong> が予後不良を判断する一つの閾値として使用されることがあります。</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Reference Images Section -->
+        <footer class="mt-12 pt-8 border-t border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 text-center mb-6">参考画像</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div class="text-center p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">参考スライスレベル（基底核）</h3>
+                    <img src="https://prod-images-static.radiopaedia.org/images/53303648/b6df24e1611b75344a42b58535319a_big_gallery.jpeg" alt="GWR測定に適したスライスレベルの例" class="w-full h-auto rounded-lg shadow-md mx-auto" onerror="this.onerror=null; this.src='https://placehold.co/600x400/e2e8f0/475569?text=画像を表示できません'">
+                </div>
+                <div class="text-center p-4 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">参考ROI設定</h3>
+                    <img src="https://storage.googleapis.com/gemini-prod-us-west1-422509930705-assets/image_812949.jpg" alt="関心領域(ROI)の設定例" class="w-full h-auto rounded-lg shadow-md mx-auto" onerror="this.onerror=null; this.src='https://placehold.co/600x400/e2e8f0/475569?text=画像を表示できません'">
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- Main Calculation Function ---
+        function calculateGWR() {
+            const ids = [
+                's1_gm_l', 's1_gm_r', 's1_wm_l', 's1_wm_r',
+                's2_gm_l', 's2_gm_r', 's2_wm_l', 's2_wm_r',
+                's3_gm_l', 's3_gm_r', 's3_wm_l', 's3_wm_r'
+            ];
+            
+            const values = ids.map(id => parseFloat(document.getElementById(id).value));
+
+            const gm_values = [values[0], values[1], values[4], values[5], values[8], values[9]].filter(v => !isNaN(v));
+            const wm_values = [values[2], values[3], values[6], values[7], values[10], values[11]].filter(v => !isNaN(v));
+
+            const gm_avg = gm_values.length > 0 ? gm_values.reduce((a, b) => a + b, 0) / gm_values.length : NaN;
+            const wm_avg = wm_values.length > 0 ? wm_values.reduce((a, b) => a + b, 0) / wm_values.length : NaN;
+
+            // --- Update Average Displays ---
+            const gmAvgEl = document.getElementById('result-gm-avg');
+            const wmAvgEl = document.getElementById('result-wm-avg');
+            
+            if (!isNaN(gm_avg)) {
+                gmAvgEl.textContent = gm_avg.toFixed(2);
+                animateResult(gmAvgEl);
+            } else {
+                gmAvgEl.textContent = '-';
+            }
+
+            if (!isNaN(wm_avg)) {
+                wmAvgEl.textContent = wm_avg.toFixed(2);
+                animateResult(wmAvgEl);
+            } else {
+                wmAvgEl.textContent = '-';
+            }
+
+            // --- Calculate GWR and Update Display ---
+            const gwrResultEl = document.getElementById('result-gwr');
+            const gwrErrorEl = document.getElementById('error-gwr');
+            const interpretationEl = document.getElementById('result-interpretation');
+            gwrErrorEl.textContent = '';
+
+            if (isNaN(gm_avg) || isNaN(wm_avg)) {
+                gwrResultEl.textContent = '-';
+                interpretationEl.textContent = '-';
+                interpretationEl.className = 'text-lg font-bold text-gray-800';
+                return;
+            }
+
+            if (wm_avg === 0) {
+                gwrResultEl.textContent = '-';
+                gwrErrorEl.textContent = '白質の平均HU値が0です。';
+                interpretationEl.textContent = '-';
+                interpretationEl.className = 'text-lg font-bold text-gray-800';
+                return;
+            }
+
+            const gwr = gm_avg / wm_avg;
+            gwrResultEl.textContent = gwr.toFixed(3);
+            animateResult(gwrResultEl);
+
+            // --- Update Clinical Interpretation ---
+            if (gwr < 1.1) {
+                interpretationEl.textContent = '予後不良の可能性 (GWR < 1.1)';
+                interpretationEl.className = 'text-lg font-bold text-red-600 result-value';
+            } else {
+                interpretationEl.textContent = '閾値以上 (GWR ≥ 1.1)';
+                interpretationEl.className = 'text-lg font-bold text-green-600 result-value';
+            }
+            animateResult(interpretationEl);
+        }
+        
+        // --- Helper function for a subtle animation on result update ---
+        function animateResult(element) {
+            element.classList.add('updated');
+            setTimeout(() => {
+                element.classList.remove('updated');
+            }, 300);
+        }
+        
+        // Initial calculation on page load in case of saved form values
+        window.onload = calculateGWR;
+    </script>
+</body>
+</html>
